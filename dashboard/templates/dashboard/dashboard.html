@@ -1,0 +1,25 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<h1>Welcome to the Dashboard!</h1>
+
+<div class="summary">
+    <h3>Summary:</h3>
+    <p>Total Projects: {{ total_projects }}</p>
+    <p>Total Days: {{ total_days }}</p>
+</div>
+
+<div class="action-buttons">
+    <button onclick="location.href='{% url 'project_list' %}'">List</button>
+    <button onclick="location.href='{% url 'project_create' %}'">New</button>
+    <button onclick="location.href='{% url 'dashboard' %}'">Refresh</button>
+</div>
+
+<div class="recent-projects">
+    <h3>Recent Projects:</h3>
+    <ul>
+        {% for project in recent_projects %}
+        <p>{{ project.name }} - Duration: {{ project.duration }}</p>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

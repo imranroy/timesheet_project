@@ -1,0 +1,49 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block content %}
+<h1>New Timesheet Entry</h1>
+
+<form method="post">
+    {% csrf_token %}
+
+    <!-- Project Dropdown -->
+    <label for="project">Project:</label><br>
+    {{ form.name }} <!-- Render the name field of the Project form, which will display as a dropdown -->
+    <br><br>
+
+    <!-- Activity Field -->
+    <label for="activity">Activity:</label><br>
+    {{ form.activity }} <!-- This uses Django form field rendering -->
+    <br><br>
+
+    <!-- Description Field -->
+    <label for="description">Description:</label><br>
+    {{ form.description }} <!-- This uses Django form field rendering -->
+    <br><br>
+
+    <!-- Location Dropdown -->
+    <label for="location">Location:</label><br>
+    {{ form.location }} <!-- This uses Django form field rendering -->
+    <br><br>
+
+    <!-- Date Field -->
+    <label for="date">Date:</label><br>
+    {{ form.date }} <!-- This uses Django form field rendering -->
+    <br><br>
+
+    <!-- Start Time Field -->
+    <label for="start_time">Start Time:</label><br>
+    {{ form.start_time }} <!-- This uses Django form field rendering -->
+    <br><br>
+
+    <!-- End Time Field -->
+    <label for="end_time">End Time:</label><br>
+    {{ form.end_time }} <!-- This uses Django form field rendering -->
+    <br><br>
+
+    <button type="submit">Save</button>
+    <a href="{% url 'dashboard' %}">Cancel</a>
+</form>
+
+{% endblock %}
