@@ -9,8 +9,15 @@ class Project(models.Model):
         ('Client Site', 'Client Site'),
     ]
     
+    ACTIVITY_CHOICES = [
+        ('General', 'General'),
+        ('Development', 'Development'),
+        ('Testing', 'Testing'),
+        ('Deployment', 'Deployment'),
+    ]
+    
     name = models.CharField(max_length=100)
-    activity = models.CharField(max_length=255, default="General")
+    activity = models.CharField(max_length=255, choices=ACTIVITY_CHOICES, default='General')
     description = models.TextField()
     location = models.CharField(max_length=100, choices=LOCATION_CHOICES)
     date = models.DateField()
