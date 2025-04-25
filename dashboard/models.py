@@ -1,37 +1,32 @@
 from django.db import models
-from datetime import timedelta
+from django.contrib.auth.models import User
 
-class Project(models.Model):
+class MasterProject(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    completion_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+class TimesheetEntry(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     LOCATION_CHOICES = [
-        ('Warehouse', 'Warehouse'),
-        ('Office', 'Office'),
-        ('Remote', 'Remote'),
-        ('Client Site', 'Client Site'),
+        ('office', 'Office'),
+        ('home', 'Home'),
+        ('client_site', 'Client Site'),
     ]
-    
-    ACTIVITY_CHOICES = [
-        ('General', 'General'),
-        ('Development', 'Development'),
-        ('Testing', 'Testing'),
-        ('Deployment', 'Deployment'),
-    ]
-    
-    name = models.CharField(max_length=100)
-    activity = models.CharField(max_length=255, choices=ACTIVITY_CHOICES, default='General')
-    description = models.TextField()
-    location = models.CharField(max_length=100, choices=LOCATION_CHOICES)
+    project = models.ForeignKey(MasterProject, on_delete=models.CASCADE)
+    activity = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    location = models.CharField(max_length=50, choices=LOCATION_CHOICES)
     date = models.DateField()
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    @property
-    def duration(self):
-        # Calculate the duration as the difference in minutes
-        if self.start_time and self.end_time:
-            return self.end_time - self.start_time
-        return timedelta()
-
     def __str__(self):
-        return self.name
+        return f"{self.project.name} - {self.activity}"

@@ -1,16 +1,13 @@
 from django.contrib import admin
-from .models import Project
+from .models import MasterProject, TimesheetEntry
 
-class ProjectAdmin(admin.ModelAdmin):
-    list_display = ['name', 'activity', 'location', 'date', 'start_time', 'end_time']
-    list_filter = ['activity', 'location', 'date']
-    search_fields = ['name', 'activity']
-    
-    # Specify the fieldsets if needed for better organization in the admin form
-    fieldsets = (
-        (None, {
-            'fields': ('name', 'activity', 'description', 'location', 'date', 'start_time', 'end_time')
-        }),
-    )
+@admin.register(MasterProject)
+class MasterProjectAdmin(admin.ModelAdmin):
+    list_display = ('name', 'completion_date', 'created_at', 'updated_at')
+    search_fields = ('name',)
 
-admin.site.register(Project, ProjectAdmin)
+@admin.register(TimesheetEntry)
+class TimesheetEntryAdmin(admin.ModelAdmin):
+    list_display = ('project', 'activity', 'location', 'date', 'start_time', 'end_time')
+    search_fields = ('project__name', 'activity')
+    list_filter = ('location', 'date')

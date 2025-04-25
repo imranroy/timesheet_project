@@ -1,39 +1,72 @@
+import datetime
 from django import forms
-from .models import Project
+from .models import MasterProject, TimesheetEntry
 
-class ProjectForm(forms.ModelForm):
-    # 'activity' field allows users to input their own activity value
-    activity = forms.CharField(
-        max_length=255,
-        required=True,
-        widget=forms.TextInput(attrs={'placeholder': 'Activity', 'class': 'form-control'})
-    )
-
-    # 'name' field is a dropdown, dynamically populated from the database
-    name = forms.ChoiceField(
-        choices=[],  # Empty choices, will be filled in the constructor
-        label="Project",
+class TimesheetEntryForm(forms.ModelForm):
+    # pick existing projects at runtime
+    project = forms.ModelChoiceField(
+        queryset=MasterProject.objects.none(),
+        empty_label="Select a Project",
         widget=forms.Select(attrs={'class': 'form-control'})
     )
 
+    # dropdown of activities
+    ACTIVITY_CHOICES = [
+        ('General', 'General'),
+        ('Development', 'Development'),
+        ('Testing', 'Testing'),
+        ('Deployment', 'Deployment'),
+    ]
+    activity = forms.ChoiceField(
+        choices=ACTIVITY_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    description = forms.CharField(
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Description'})
+    )
+
+    location = forms.ChoiceField(
+        choices=TimesheetEntry.LOCATION_CHOICES,
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+
+    date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'})
+    )
+
+    # form-only time fields (won’t directly map to model)
+    start_time_only = forms.TimeField(
+        label="Start Time",
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'})
+    )
+    end_time_only = forms.TimeField(
+        label="End Time",
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'})
+    )
+
     class Meta:
-        model = Project
-        fields = ['name', 'activity', 'description', 'location', 'date', 'start_time', 'end_time']
-        widgets = {
-            'description': forms.Textarea(attrs={'placeholder': 'Description', 'class': 'form-control'}),
-            'location': forms.Select(choices=Project.LOCATION_CHOICES, attrs={'class': 'form-control'}),
-            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'start_time': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            'end_time': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-        }
+        model = TimesheetEntry
+        # note: we exclude the model's start_time/end_time here
+        fields = ['project', 'activity', 'description', 'location', 'date']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Fetch distinct project names from the database and populate the dropdown
-        names_qs = Project.objects.order_by('name').values_list('name', 'name').distinct()
-        choices = [('', 'Select a Project')] + list(names_qs)
-        self.fields['name'].choices = choices
+        # now load projects each time
+        self.fields['project'].queryset = MasterProject.objects.all()
 
-        # Override the widgets for the datetime fields to make sure they're correctly formatted
-        self.fields['start_time'].widget.input_formats = ['%Y-%m-%dT%H:%M']
-        self.fields['end_time'].widget.input_formats = ['%Y-%m-%dT%H:%M']
+    def save(self, commit=True):
+        entry = super().save(commit=False)
+        # combine date + form-only times into the model’s DateTimeFields
+        entry.start_time = datetime.datetime.combine(
+            self.cleaned_data['date'],
+            self.cleaned_data['start_time_only']
+        )
+        entry.end_time = datetime.datetime.combine(
+            self.cleaned_data['date'],
+            self.cleaned_data['end_time_only']
+        )
+        if commit:
+            entry.save()
+        return entry

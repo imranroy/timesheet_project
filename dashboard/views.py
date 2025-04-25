@@ -1,52 +1,66 @@
+from django.db.models import Count
 from django.shortcuts import render, redirect
-from .models import Project
-from .forms import ProjectForm
+from .models import MasterProject, TimesheetEntry
+from .forms import TimesheetEntryForm
+from django.db.models import F, ExpressionWrapper, fields
 from datetime import timedelta
+from django.db.models import Sum, DurationField
+from django.contrib.auth.decorators import login_required
 
+from django.contrib.auth.views import LoginView
+
+class CustomLoginView(LoginView):
+    template_name = 'dashboard/login.html'
+@login_required
 def dashboard_view(request):
-    projects = Project.objects.all().order_by('-created_at')
+    user = request.user
 
-    total_projects = projects.count()
-    total_seconds = 0
+    # All entries by this user
+    user_projects = TimesheetEntry.objects.filter(user=user)
 
-    # Preparing a new list to include durations
-    recent_projects = []
-    for project in projects[:5]:  # only top 5
-        if project.start_time and project.end_time:
-            duration = project.end_time - project.start_time
-            total_seconds += duration.total_seconds()
+    # Count of all projects (not distinct unless you want unique projects)
+    total_projects = user_projects.count()
 
-            # Attach duration (in hours) to project object
-            project.duration_hours = round(duration.total_seconds() / 3600, 2)
-        else:
-            project.duration_hours = None  # if missing
+    # Unique days
+    total_days = user_projects.values('date').distinct().count()
 
-        recent_projects.append(project)
+    # Total duration
+    duration = user_projects.annotate(
+        duration=ExpressionWrapper(F('end_time') - F('start_time'), output_field=DurationField())
+    ).aggregate(total_duration=Sum('duration'))['total_duration'] or timedelta()
 
-    total_hours = total_seconds / 3600
+    hours, remainder = divmod(duration.total_seconds(), 3600)
+    minutes = remainder // 60
+
+    recent_projects = TimesheetEntry.objects.filter(user=user).order_by('-created_at')[:5]
 
     context = {
-        'projects': projects,
         'total_projects': total_projects,
-        'total_days': total_hours,  # total worked hours
-        'recent_projects': recent_projects,
+        'total_days': total_days,
+        'duration_hours': int(hours),
+        'duration_minutes': int(minutes),
+        'recent_projects':recent_projects
     }
     return render(request, 'dashboard/dashboard.html', context)
 
-def project_list(request):
-    projects = Project.objects.all().order_by('-created_at')
-    return render(request, 'dashboard/project_list.html', {'projects': projects})
 
+@login_required
 def project_create(request):
     if request.method == 'POST':
-        form = ProjectForm(request.POST)
+        form = TimesheetEntryForm(request.POST)
         if form.is_valid():
-            # Save the form data to the database
-            form.save()
-            return redirect('project_list')  # Redirect to the project list after saving
-        else:
-            # If the form is not valid, return the form with errors
-            return render(request, 'dashboard/project_form.html', {'form': form})
+            entry = form.save(commit=False)
+            entry.user = request.user  # Set the user as the logged-in user
+            entry.save()  # Save the entry
+            return redirect('project_list')  # Redirect to project list page after saving
     else:
-        form = ProjectForm()  # If it's a GET request, render an empty form
-        return render(request, 'dashboard/project_form.html', {'form': form})
+        form = TimesheetEntryForm()
+
+    return render(request, 'dashboard/project_form.html', {'form': form})
+
+
+@login_required
+def project_list(request):
+    # Get all timesheet entries created by the logged-in user, ordered by date
+    entries = TimesheetEntry.objects.select_related('project').filter(user=request.user).order_by('-created_at')
+    return render(request, 'dashboard/project_list.html', {'entries': entries})

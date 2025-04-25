@@ -1,11 +1,39 @@
-{% extends "dashboard/base.html" %}
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
 {% block content %}
-<h2>All Projects</h2>
-<ul>
-    {% for p in projects %}
-    <li>{{ p.name }} — {{ p.duration }} days</li>
-    {% empty %}
-    <li>No projects yet.</li>
-    {% endfor %}
-</ul>
+<div class="container mt-5">
+	<h2 class="mb-4">All Projects</h2>
+	<div class="table-responsive">
+		<table class="table table-bordered table-hover align-middle text-center">
+			<thead class="table-dark">
+				<tr>
+					<th>Project</th>
+					<th>Activity</th>
+					<th>Location</th>
+					<!-- <th>Date</th> -->
+					<th>Start Time</th>
+					<th>End Time</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for entry in entries %}
+				<tr>
+					<td>{{ entry.project }}</td>
+					<td>{{ entry.activity }}</td>
+					<td>{{ entry.location }}</td>
+					<!-- <td>{{ entry.date|date:"F d, Y" }}</td> -->
+					<td>{{ entry.start_time|date:"F d, Y, P" }}</td>
+					<td>{{ entry.end_time|date:"F d, Y, P" }}</td>
+				</tr>
+				{% empty %}
+				<tr>
+					<td colspan="6">No projects found.</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+
+		</table>
+	</div>
+</div>
 {% endblock %}
