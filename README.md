@@ -15,7 +15,7 @@ Database: SQLite3 (default Django DB)
 
 🏗️ **Setup Instructions**
 Clone the repository:
-git clone https://github.com/your-username/timesheet_project.git
+git clone https://github.com/imranroy/timesheet_project.git
 cd timesheet_project
 Create a virtual environment and activate it:
 python -m venv my_env
