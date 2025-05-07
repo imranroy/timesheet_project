@@ -1,0 +1,15 @@
+# Python bytecode files
+*.pyc
+__pycache__/
+
+# Virtual environment
+my_env/
+
+# Django SQLite database
+db.sqlite3
+
+# VS Code (optional)
+.vscode/
+
+# Mac OS (optional)
+.DS_Store
